@@ -1,6 +1,7 @@
 pub mod utils;
 pub mod consensus;
-pub mod blockchain;
+pub mod blocklattice;
+pub mod constants;
 
 #[cfg(test)]
 mod tests {

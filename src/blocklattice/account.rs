@@ -22,7 +22,7 @@ pub enum AccountTypes {
 pub struct CanaryAccountGenesis {
     account_type: u16,
     address: String, // Public Key (base32)
-    representative: Option<>
+    representative: Option<String>,
 
         // Global to all accounts
         information_hash: Option<String>, // Can Change
