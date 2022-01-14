@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 # Crypto
 AmanitaMuscaria = "0.0.3"
+blake2 = "0.10.2"
 blake2-rfc = "0.2.18"
 
 # Web
@@ -15,3 +16,6 @@ url = "2.2.2"
 
 # Time
 chrono = "0.4.19"
+
+# Validation
+CanaryValidationLib = "0.1.1"

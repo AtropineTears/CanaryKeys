@@ -1,1 +1,1 @@
-pub mod pivotpoint;
+pub mod point;
