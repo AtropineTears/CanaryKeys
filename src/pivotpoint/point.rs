@@ -1,20 +1,5 @@
 use blake2_rfc::blake2b::blake2b;
 
-//! Pivot Point
-//! 
-//! ## What Can Exist In A Pivot Point
-//! 
-//! - Index
-//!     - Indexes all available services
-//! - List_of_Owners
-//! - Voting
-//! - Rules
-//! - Public Space
-//!     - Allows messages, posting content
-//! - Blogs
-//!     - Post Blogs using IPFS
-//! - 
-//! 
 pub enum PivotPointType {
     DefaultStorage, // Default Storage of Data
     Blog, // A Blogging Platform
@@ -35,23 +20,19 @@ pub enum PivotPointType {
     Learning, // A Place To Learn
 }
 
-// 48 byte string encoded in base32
-// u16 is the Pivot Point 
+/// 48 byte string encoded in base32
+/// u16 is the Pivot Point Type
+/// # Format
+/// 
+/// pivotpointinbase32:number
 pub struct PivotPointLink(String,u16);
 
-impl PivotPoint {
-    pub fn validate(&self){
-        
-    }
-    pub fn genesis(){
-
-    }
-}
-
 pub struct PivotPointCreators {
+    creation_block: String,
+    
     schnorr_public_keys: Vec<String>, // List of Schnorr Public Keys
     falcon1024_public_keyes: Vec<String>, // List of Falcon1024 Public Keys (Post-Quantum)
-    number_of_creators:
+    number_of_keys: u64,
 }
 
 pub struct PivotPointUsers {
@@ -64,10 +45,9 @@ pub struct PivotPointRules {
     
 }
 
-pub struct PivotPointCreator {
-
-}
-
 pub struct PivotPointIndex {
-
+    list_of_inputs: Vec<(String,String)>,
+    num_of_points: u64,
 }
+
+pub struct PivotPointID(u64,String);

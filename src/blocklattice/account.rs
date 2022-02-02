@@ -6,9 +6,14 @@
 //!     - Get Signed By Users using Web of Trust
 //!     - 
 
+use crate::types::address::CanaryAddress;
+
+pub struct AccountIndex(Vec<String>);
+
 pub enum AccountTypes {
     User0, // Default Account; Used to vote, send txs, get signed, and others
     Organization1, // An Organization 
+    
     Delegate2, // An account that validates blocks
     Collection3, // A Collection of Accounts
     CertAuth4, // A Certificate Authority
@@ -19,10 +24,15 @@ pub enum AccountTypes {
     Community7,
 }
 
-pub struct CanaryAccountGenesis {
-    account_type: u16,
-    address: String, // Public Key (base32)
-    representative: Option<String>,
+/// # Developer Notes
+/// 
+/// Require a vote to use a Canary Account
+pub struct CanaryAccountRoot {
+    // Account Type
+    account_type: u8,
+    address: CanaryAddress, // Public Key (base32)
+    representative: CanaryAddress, // Who this account voted for; Must vote when account is opened
+    is_delegate: bool,
 
         // Global to all accounts
         information_hash: Option<String>, // Can Change
@@ -41,3 +51,20 @@ pub struct CanaryAccountGenesis {
 
 }
 
+
+/*
+pub struct CanaryAccountTransactions {
+    pub blocks: Vec<>
+}
+*/
+
+pub struct Block {
+
+}
+
+/// # Canary Account Balance
+/// 
+/// This represents the balance available for a Canary Account
+pub struct AccountBalance(u128);
+
+pub struct TokenBalance();

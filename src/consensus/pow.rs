@@ -1,10 +1,20 @@
 use blake2_rfc::blake2b::*;
 use crate::utils::pow_to_bytes::NonceConversion;
-use crate::constants::consensus::{CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1,CONSENSUS_2,CONSENSUS_3,CONSENSUS_4};
+use crate::constants::{CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1,CONSENSUS_2,CONSENSUS_3,CONSENSUS_4};
 
 /// # Proof of Work API
 /// 
 /// This struct represents PoW nonces. The difficulty is the number of bits in front of the hash.
+/// 
+/// ## How To Do Proof of Work
+/// 
+/// ```
+/// 
+/// fn main(){
+///     ProofOfWorkAPI::new(b"Hello World",CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1);
+/// }
+/// 
+/// ```
 pub struct ProofOfWorkAPI;
 
 pub struct VerifyNonce;

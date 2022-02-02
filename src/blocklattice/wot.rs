@@ -12,8 +12,6 @@ pub struct WebOfTrust {
 
 pub struct WebOfTrustSignature {
     pk: String, // Hex
-    signature: String, // Base58
-    message: String,
-    
+    signature: String, // Base58    
     pow_nonce: u128,
 }
