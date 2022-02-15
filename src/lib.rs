@@ -11,6 +11,8 @@ pub mod constants;
 /// File that lists Canary Errors
 pub mod canary_errors;
 
+pub mod crypto;
+
 /// Utilities
 pub mod utils;
 

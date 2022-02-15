@@ -34,8 +34,8 @@ use crate::canary_errors::CanaryErrors;
 /// ### Encoding
 /// 
 /// - to_bytes()
-#[derive(Debug,Clone,Hash,PartialEq,Serialize,Deserialize)]
-pub struct CanaryAddress(String);
+#[derive(Debug,Clone,Hash,PartialEq,Eq,Serialize,Deserialize)]
+pub struct CanaryAddress(pub String);
 
 impl ValidateCanaryType for CanaryAddress {
     fn validate_length(&self) -> bool {

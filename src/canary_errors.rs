@@ -7,4 +7,6 @@ pub enum CanaryErrors {
     // Validation
     FailedToValidatePublicKey,
     FailedToValidateAddress,
+
+    FailedToVerifySchnorrSignature,
 }
