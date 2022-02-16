@@ -12,7 +12,7 @@ pub enum CanaryAccountsEnum {
 pub struct CanaryAccountTypes(String);
 
 impl CanaryAccountTypes {
-    pub fn new<T: AsRef<str>>(&self, input: T) -> Self {
+    pub fn new<T: AsRef<str>>(input: T) -> Self {
         return Self(input.as_ref().to_string())
     }
     pub fn validate_length(&self) -> bool {

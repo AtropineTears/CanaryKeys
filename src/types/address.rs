@@ -1,13 +1,13 @@
 use serde::{Serialize,Deserialize};
-use crate::types::traits::ValidateCanaryType;
 use CanaryValidationLib::CanaryValidateEncodingAPI;
 use blake2_rfc::blake2b::*;
 use hex::*;
 use crate::canary_errors::CanaryErrors;
+use base32::*;
 
 /// # types/address/ CanaryAddress
 /// 
-/// A CanaryAddress is an address used in a block lattice. It is encoded in Base32 (Crockford).
+/// A CanaryAddress is an address used in a block lattice. It is encoded in **Base32 (Crockford)**.
 /// 
 /// There are multiple methods that exist on this type.
 /// 
@@ -37,8 +37,8 @@ use crate::canary_errors::CanaryErrors;
 #[derive(Debug,Clone,Hash,PartialEq,Eq,Serialize,Deserialize)]
 pub struct CanaryAddress(pub String);
 
-impl ValidateCanaryType for CanaryAddress {
-    fn validate_length(&self) -> bool {
+impl CanaryAddress {
+    pub fn validate_length(&self) -> bool {
         if self.0.len() == 52usize {
             return true
         }
@@ -47,14 +47,16 @@ impl ValidateCanaryType for CanaryAddress {
         }
     }
     /// Validates Address Is In Hexadecimal
+    /*
     fn validate_format(&self) -> bool {
         CanaryValidateEncodingAPI::hex(&self.0)
     }
-    fn validate(&self) -> bool {
-        let format_bool = self.validate_format();
+    */
+    pub fn validate(&self) -> bool {
+        //let format_bool = self.validate_format();
         let length_bool = self.validate_length();
 
-        if format_bool == true && length_bool == true {
+        if length_bool == true {
             return true
         }
         else {
@@ -85,11 +87,11 @@ impl CanaryAddress {
     }
     /// Converts Address To Bytes
     pub fn to_bytes(&self) -> Result<Vec<u8>,CanaryErrors>{
-        let x = hex::decode(self.0.clone());
+        let x = base32::decode(Alphabet::Crockford,&self.0);
 
         match x {
-            Ok(v) => return Ok(v),
-            Err(_) => return Err(CanaryErrors::FailedToDecodeFromHex),
+            Some(v) => return Ok(v),
+            None => return Err(CanaryErrors::FailedToDecodeFromBase32),
         };
     }
 }

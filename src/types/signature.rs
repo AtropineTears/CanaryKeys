@@ -1,6 +1,9 @@
 use AmanitaMuscaria::schnorr::schnorr::*;
 use crate::canary_errors::CanaryErrors;
 
+use base32::*;
+use hex::*;
+
 use serde::{Serialize,Deserialize};
 
 /// A CanarySignature is the signature encoded in base58 and the message.
@@ -8,8 +11,17 @@ use serde::{Serialize,Deserialize};
 pub struct CanarySignature(String,String);
 
 impl CanarySignature {
-    /// Verify using hexadecimal public key
+    /// Verify using **Base32 (Crockford)**
     pub fn verify(&self, pk: String) -> bool {
+        let decoded_key_result = base32::decode(Alphabet::Crockford, &pk);
+
+        let decoded_key = match decoded_key_result {
+            Some(v) => v,
+            None => return false
+        };
+        
+        let pk_in_hex = hex::encode_upper(decoded_key);
+        
         let sig = SchnorrSignature::from_encoding(pk, self.0.clone(), b"CanaryKeys", self.1.as_bytes());
         let is_valid = sig.verify();
 

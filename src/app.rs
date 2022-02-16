@@ -36,7 +36,6 @@
 //! ## AmanitaNet
 
 // Serialization
-use crate::types::traits::ValidateCanaryType;
 use serde::{Serialize,Deserialize};
 
 #[macro_use]
@@ -66,8 +65,9 @@ use crate::types::base::block_hash::BlockHash;
 
 use crate::consensus::pow::{ProofOfWorkAPI,VerifyNonce};
 
-use crate::constants::CONSENSUS_3;
+use crate::constants::CONSENSUS_2;
 
+use crate::crypto::CanaryGenerateSeedAPI;
 //==========BASE BLOCKCHAIN==========//
 // The Base Blockchain contains the following:
 // - CanaryAccounts
@@ -100,21 +100,28 @@ impl CanaryAccountsBlockchain {
         }
     }
     pub fn genesis(&mut self){
-        let genesis_block = CanaryAccountsBlock::genesis_of_chain();
+        // Generate Keypair For Testing
+        let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+        
+        // Create First Genesis Block
+        let genesis_block = CanaryAccountsBlock::genesis_of_chain(keypair);
 
+        // Push First Block
         self.blocks.push(genesis_block)
+    }
+    pub fn try_add_block(&mut self, block: CanaryAccountsBlock) {
+
     }
 }
 
 #[derive(Debug,Clone,Serialize,Deserialize)]
 pub struct CanaryAccountsBlock {
-    //pub basics: BlockLayout,
     pub block_id: u64,
     pub previous_hash: BlockHash,
     pub timestamp: i64,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transactions: Option< Vec<CanaryAccountTransaction> >,
+    //#[serde(skip_serializing_if = "Option::is_none")]
+    pub transaction: CanaryAccountTransaction,
     
     pub hash: BlockHash,
     pub nonce: u128,
@@ -129,24 +136,21 @@ pub struct CanaryAccountTransaction {
     pub pow: u128,
     pub signature: CanarySignature,
 }
-
 impl CanaryAccountTransaction {
     /// # Create Transaction
     /// 
     /// This function creates a transaction on the base blockchain. The Proof of Work (nonce) is done with the address used as input.
     pub fn create_transaction(keypair: SchnorrKeypair,description: CanaryDescription, account_type: CanaryAccountTypes) -> Self {
         let address = keypair.return_pk_as_base32();
-
         let final_address = CanaryAddress(address);
 
         let address_in_bytes = final_address.to_bytes();
-
         let add_in_bytes = match address_in_bytes {
             Ok(v) => v,
             Err(_) => panic!("Failed To Sign Transaction Due To Address Not Converting To Bytes")
         };
 
-        let nonce: u128 = ProofOfWorkAPI::new(add_in_bytes,CONSENSUS_3);
+        let nonce: u128 = ProofOfWorkAPI::new(add_in_bytes,CONSENSUS_2);
 
         if final_address.validate() == false {
             panic!("Could Not Validate Address")
@@ -193,6 +197,7 @@ impl CanaryAccountTransaction {
             // POW Difficulty
             let pow_difficulty = VerifyNonce::new(output_address_in_bytes, self.pow);
 
+            // Checks whether PoW is less than 3
             if pow_difficulty < 3u8 {
                 return false
             } 
@@ -224,43 +229,39 @@ impl CanaryAccountTransaction {
 }
 
 impl CanaryAccountsBlock {
-    pub fn genesis_of_chain() -> Self {
+    pub fn calculate_hash(block_id: u64, previous_hash: BlockHash,transaction: CanaryAccountTransaction, nonce: u128) -> String {
+        let timestamp = Utc::now().timestamp();
+
+        let data = serde_json::json!(
+            {
+                "id": block_id,
+                "previous_hash": previous_hash,
+                "timestamp": timestamp,
+                "transaction": transaction,
+                "nonce": nonce,
+            }
+        );
+
+        let hash = blake2b(48, &[], data.to_string().as_bytes());
+
+        return hex::encode_upper(hash)
+
+    }
+    pub fn genesis_of_chain(keypair: SchnorrKeypair) -> Self {
         // id = 0
         // hash_of_block
+        let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This Is The Genesis Transaction"), CanaryAccountTypes::new("Default"));
 
         let genesis_block = CanaryAccountsBlock { 
             block_id: 0u64, 
             previous_hash: BlockHash::genesis_hash(), 
             timestamp: Utc::now().timestamp(), 
-            transactions: None, 
+            transaction: tx, 
             hash: BlockHash::genesis_hash(), 
             nonce: 0u128,
         };
 
         return genesis_block
-    }
-    pub fn genesis() {
-        // BASICS
-            // id
-            // hash of block
-            // previous_hash
-            // timestamp
-            // nonce
-        
-        //let pk = keypair.return_pk_as_hex();
-
-
-        let id: u64 = 0;
-        let previous_hash: &str = "Genesis Block. Welcome To CanaryKeys.";
-
-        // Hash Block
-        let mut context = Blake2b::new(32);
-
-
-        // Canary Signature
-        //let canary_sig = CanarySignature::sign(keypair, message: String);
-
-        //let basics = BlockLayout::new(0u64, "Genesis", "Genesis", 0u128);
     }
 }
 
@@ -361,8 +362,15 @@ pub struct PivotPointBlock {
 
 #[test]
 fn create_new_blockchain(){
+    // Create Blockchain + Genesis Block
     let mut blockchain = CanaryAccountsBlockchain::new(CanaryLayerType::default_main());
     blockchain.genesis();
+
+    // Generate Keypair
+    let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+
+    // Generate Transaction
+    let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is a Test"), CanaryAccountTypes::new("Default"));
 
     println!("{:?}",blockchain.blocks);
 }

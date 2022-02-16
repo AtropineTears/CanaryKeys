@@ -7,6 +7,9 @@ pub struct CanaryDescription(String);
 
 
 impl CanaryDescription {
+    pub fn new<T: AsRef<str>>(description: T) -> Self {
+        return Self(description.as_ref().to_string())
+    }
     pub fn validate_length(&self) -> bool {
         if self.0.len() > 512 {
             return false
