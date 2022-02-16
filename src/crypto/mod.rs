@@ -3,6 +3,12 @@ use AmanitaMuscaria::schnorr::schnorr::*;
 
 pub struct CanaryGenerateSeedAPI;
 
+impl CanaryGenerateSeedAPI {
+    pub fn generate_schnorr_keypair(){
+        
+    }
+}
+
 /*
 impl CanaryGenerateSeedAPI {
     pub fn generate<T: AsRef<str>>(language: Language,password: T) -> &str {

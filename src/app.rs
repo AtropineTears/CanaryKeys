@@ -39,6 +39,9 @@
 use crate::types::traits::ValidateCanaryType;
 use serde::{Serialize,Deserialize};
 
+#[macro_use]
+use serde_json::*;
+
 // Time
 use chrono::*;
 
@@ -122,14 +125,17 @@ pub struct CanaryAccountTransaction {
     pub address: CanaryAddress,
     pub description: CanaryDescription,
     pub account_type: CanaryAccountTypes,
-
+    
     pub pow: u128,
     pub signature: CanarySignature,
 }
 
 impl CanaryAccountTransaction {
+    /// # Create Transaction
+    /// 
+    /// This function creates a transaction on the base blockchain. The Proof of Work (nonce) is done with the address used as input.
     pub fn create_transaction(keypair: SchnorrKeypair,description: CanaryDescription, account_type: CanaryAccountTypes) -> Self {
-        let address = keypair.return_pk_as_hex();
+        let address = keypair.return_pk_as_base32();
 
         let final_address = CanaryAddress(address);
 
@@ -149,16 +155,28 @@ impl CanaryAccountTransaction {
         // TODO: Sign Address, Description, Account Type, and PoW
         // TODO: Change Account Type to Account Implementation Using a 16 byte string!!!!!!!!
 
+        let hash = Self::calculate_hash_for_signing(final_address.clone(), description.clone(), account_type.clone(), nonce);
+
+
+        // TODO: Change
+        let signature_result = CanarySignature::sign(keypair, hash);
+
+        let signature = match signature_result {
+            Ok(v) => v,
+            Err(_) => panic!("Failed To Sign Transaction Due To Failed Signature")
+        };
+
         Self {
             address: final_address,
             description: description,
             account_type: account_type,
             pow: nonce,
-
-            signature: 
+            
+            signature: signature,
         }
 
     }
+    // TODO: Fix validation of address by using Base32 Crockford regular expression
     pub fn verify_tx(&self) -> bool {
         if self.address.validate() == false || self.description.validate_length() == false {
             return false
@@ -187,6 +205,21 @@ impl CanaryAccountTransaction {
                 return false
             }
         }
+    }
+    /// Calculate Hash Using Blake2b (48 bytes) for signing
+    fn calculate_hash_for_signing(address: CanaryAddress, description: CanaryDescription, account_type: CanaryAccountTypes, pow: u128) -> String {
+        let data = serde_json::json!(
+            {
+            "CanaryAddress": address,
+            "Description": description,
+            "Account_Type": account_type,
+            "PoW": pow,
+            }
+        );
+
+        let hash = blake2b(48,&[],data.to_string().as_bytes());
+
+        return hex::encode_upper(hash.as_bytes())
     }
 }
 

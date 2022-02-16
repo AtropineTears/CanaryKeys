@@ -7,7 +7,7 @@ use crate::canary_errors::CanaryErrors;
 
 /// # types/address/ CanaryAddress
 /// 
-/// A CanaryAddress is an address used in a block lattice.
+/// A CanaryAddress is an address used in a block lattice. It is encoded in Base32 (Crockford).
 /// 
 /// There are multiple methods that exist on this type.
 /// 
@@ -39,7 +39,7 @@ pub struct CanaryAddress(pub String);
 
 impl ValidateCanaryType for CanaryAddress {
     fn validate_length(&self) -> bool {
-        if self.0.len() == 64usize {
+        if self.0.len() == 52usize {
             return true
         }
         else {
