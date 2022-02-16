@@ -17,12 +17,14 @@ use crate::constants::{CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1,CONSENSUS_2,CONSENS
 /// ```
 pub struct ProofOfWorkAPI;
 
+pub struct ProofOfWork64API;
+
 pub struct VerifyNonce;
 
 impl VerifyNonce {
-    pub fn new<T: AsRef<[u8]>>(input: T, nonce: u128) -> u8 {
+    pub fn new<T: AsRef<[u8]>>(input: T, nonce: u64) -> u8 {
         let mut bytes: Vec<u8> = input.as_ref().to_vec();
-        let mut nonce_as_bytes = NonceConversion::to_bytes_u128(&vec![nonce]);
+        let mut nonce_as_bytes = NonceConversion::to_bytes_u64(&vec![nonce]);
 
         bytes.append(&mut nonce_as_bytes);
 
@@ -80,6 +82,34 @@ impl ProofOfWorkAPI {
     }
 }
 
+impl ProofOfWork64API {
+    pub fn new<T: AsRef<[u8]>>(input: T, threshold: u64) -> u64 {
+        let mut nonce: u64 = 0u64;
+        let bytes: Vec<u8> = input.as_ref().to_vec();
+
+        loop {
+            // Initialize Bytes With Nonce
+            let mut bytes_with_nonce: Vec<u8> = bytes.clone();
+
+            // Convert Nonce To Bytes
+            let mut nonce_bytes: Vec<u8> = NonceConversion::to_bytes_u64(&vec![nonce]);
+
+            // Append Nonce To Input Bytes
+            bytes_with_nonce.append(&mut nonce_bytes);
+            // Hash Input with Nonce
+            let output_hash = blake2b(8, &[], &bytes_with_nonce);
+            
+            if output_hash.as_bytes() >= &threshold.to_be_bytes() {
+                return nonce
+            }
+            else {
+                println!("Nonce: {}",nonce);
+                nonce += 1u64;
+            }
+        }
+    }
+}
+
 #[test]
 fn test_pow(){
     ProofOfWorkAPI::new("Hello World!", 0xffffc00000000000);
@@ -87,6 +117,6 @@ fn test_pow(){
 
 #[test]
 fn test_verification(){
-    let x = VerifyNonce::new("Hello World!", 319625u128);
+    let x = VerifyNonce::new("Hello World!", 319625u64);
     println!("Number: {}",x);
 }

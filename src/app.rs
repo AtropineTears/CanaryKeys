@@ -63,9 +63,9 @@ use crate::types::account_types::CanaryAccountTypes;
 
 use crate::types::base::block_hash::BlockHash;
 
-use crate::consensus::pow::{ProofOfWorkAPI,VerifyNonce};
+use crate::consensus::pow::{ProofOfWork64API,VerifyNonce};
 
-use crate::constants::CONSENSUS_2;
+use crate::constants::CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1;
 
 use crate::crypto::CanaryGenerateSeedAPI;
 //==========BASE BLOCKCHAIN==========//
@@ -124,7 +124,7 @@ pub struct CanaryAccountsBlock {
     pub transaction: CanaryAccountTransaction,
     
     pub hash: BlockHash,
-    pub nonce: u128,
+    pub nonce: u64,
 }
 
 #[derive(Debug,Clone,Serialize,Deserialize)]
@@ -133,7 +133,7 @@ pub struct CanaryAccountTransaction {
     pub description: CanaryDescription,
     pub account_type: CanaryAccountTypes,
     
-    pub pow: u128,
+    pub pow: u64,
     pub signature: CanarySignature,
 }
 impl CanaryAccountTransaction {
@@ -150,7 +150,7 @@ impl CanaryAccountTransaction {
             Err(_) => panic!("Failed To Sign Transaction Due To Address Not Converting To Bytes")
         };
 
-        let nonce: u128 = ProofOfWorkAPI::new(add_in_bytes,CONSENSUS_2);
+        let nonce: u64 = ProofOfWork64API::new(add_in_bytes,CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1);
 
         if final_address.validate() == false {
             panic!("Could Not Validate Address")
@@ -212,7 +212,7 @@ impl CanaryAccountTransaction {
         }
     }
     /// Calculate Hash Using Blake2b (48 bytes) for signing
-    fn calculate_hash_for_signing(address: CanaryAddress, description: CanaryDescription, account_type: CanaryAccountTypes, pow: u128) -> String {
+    fn calculate_hash_for_signing(address: CanaryAddress, description: CanaryDescription, account_type: CanaryAccountTypes, pow: u64) -> String {
         let data = serde_json::json!(
             {
             "CanaryAddress": address,
@@ -258,7 +258,7 @@ impl CanaryAccountsBlock {
             timestamp: Utc::now().timestamp(), 
             transaction: tx, 
             hash: BlockHash::genesis_hash(), 
-            nonce: 0u128,
+            nonce: 0u64,
         };
 
         return genesis_block
