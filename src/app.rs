@@ -47,6 +47,8 @@ use chrono::*;
 // HashMap
 use std::collections::HashMap;
 
+use log::*;
+
 
 // Crypto
 use blake2_rfc::blake2b::*;
@@ -57,12 +59,15 @@ use AmanitaMuscaria::seed::*;
 use crate::types::address::CanaryAddress;
 use crate::types::currency::{CanaryCurrency,CanaryTokenAbbreviation,CanaryTokens};
 use crate::types::layer::CanaryLayerType;
-use crate::types::base::description::CanaryDescription;
 use crate::types::signature::CanarySignature;
 use crate::types::account_types::CanaryAccountTypes;
 
+// BASE BLOCKCHAIN (Types)
+use crate::types::base::description::CanaryDescription;
 use crate::types::base::block_hash::BlockHash;
+use crate::types::base::services::CanaryServicesType;
 
+// Consensus
 use crate::consensus::pow::{ProofOfWork64API,VerifyNonce};
 
 use crate::constants::CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1;
@@ -84,7 +89,31 @@ pub struct CanaryAccountsBlockchain {
     
     // Locate an Addresses Block
     pub addresses: HashMap<CanaryAddress,u64>,
+    pub delegates: HashMap<CanaryAddress,bool> // TODO: Change Bool to value to find delegates
     //pub hash: Vec<String>
+}
+
+#[derive(Serialize,Deserialize,Debug,Clone)]
+pub struct TransactionPool {
+    pub transactions: Vec<CanaryAccountTransaction>,
+    pub addresses: HashMap<CanaryAddress,u64>, // HashMap that contains the addresses that are in the blocks
+}
+
+impl TransactionPool {
+    pub fn sort_by_address(&mut self) {
+        if self.transactions.len() > 10 && self.transactions.len() <= 15 {
+            let sorted_transactions = Self::bubble_sort(self.transactions);
+        }
+    }
+    fn bubble_sort(transactions: Vec<CanaryAccountTransaction>) {
+        for i in 0..transactions.len() {
+            for j in 0..transactions.len() - 1 - i {
+                if transactions[j].address > transactions[j + 1].address {
+                    transactions.swap(j, j + 1);
+                }
+            }
+        }
+    }
 }
 
 
@@ -97,6 +126,7 @@ impl CanaryAccountsBlockchain {
             layer: layer,
             blocks: vec![],
             addresses: HashMap::new(),
+            delegates: HashMap::new(),
         }
     }
     pub fn genesis(&mut self){
@@ -110,6 +140,16 @@ impl CanaryAccountsBlockchain {
         self.blocks.push(genesis_block)
     }
     pub fn try_add_block(&mut self, block: CanaryAccountsBlock) {
+        // Get latest block
+        let latest_block = self.blocks.last().expect("there is at least one block");
+        
+        if self.is_block_valid(&block, latest_block) {
+            self.blocks.push(block);
+        } else {
+            error!("could not add block - invalid");
+        }
+    }
+    pub fn is_block_valid(&mut self, block: CanaryAccountsBlock, latest_block: CanaryAccountsBlock){
 
     }
 }
@@ -121,7 +161,7 @@ pub struct CanaryAccountsBlock {
     pub timestamp: i64,
 
     //#[serde(skip_serializing_if = "Option::is_none")]
-    pub transaction: CanaryAccountTransaction,
+    pub transaction: Vec<CanaryAccountTransaction>,
     
     pub hash: BlockHash,
     pub nonce: u64,
@@ -229,7 +269,7 @@ impl CanaryAccountTransaction {
 }
 
 impl CanaryAccountsBlock {
-    pub fn calculate_hash(block_id: u64, previous_hash: BlockHash,transaction: CanaryAccountTransaction, nonce: u128) -> String {
+    pub fn calculate_hash(block_id: u64, previous_hash: BlockHash,transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> String {
         let timestamp = Utc::now().timestamp();
 
         let data = serde_json::json!(
@@ -238,7 +278,7 @@ impl CanaryAccountsBlock {
                 "previous_hash": previous_hash,
                 "timestamp": timestamp,
                 "transaction": transaction,
-                "nonce": nonce,
+                "nonce": nonce, 
             }
         );
 
@@ -251,6 +291,8 @@ impl CanaryAccountsBlock {
         // id = 0
         // hash_of_block
         let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This Is The Genesis Transaction"), CanaryAccountTypes::new("Default"));
+
+        tx_vec.push(tx);
 
         let genesis_block = CanaryAccountsBlock { 
             block_id: 0u64, 

@@ -34,7 +34,7 @@ use base32::*;
 /// ### Encoding
 /// 
 /// - to_bytes()
-#[derive(Debug,Clone,Hash,PartialEq,Eq,Serialize,Deserialize)]
+#[derive(Debug,Clone,Hash,PartialEq,Eq,Serialize,Deserialize,PartialOrd,Ord)]
 pub struct CanaryAddress(pub String);
 
 impl CanaryAddress {

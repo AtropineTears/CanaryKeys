@@ -14,3 +14,7 @@ pub const FALCON1024_SIGNATURE_KEY_SIZE: usize = 1280usize;
 //
 
 //===============CANARY GENESIS===============//
+
+
+//===============BASE BLOCKCHAIN===============//
+pub const BLAKE2B_DIGEST_SIZE_FOR_BASE_BLOCKCHAIN: usize = 48usize;
