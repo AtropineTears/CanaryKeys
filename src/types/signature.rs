@@ -8,7 +8,7 @@ use serde::{Serialize,Deserialize};
 
 /// A CanarySignature is the signature encoded in base58 and the message.
 #[derive(Debug,Clone,Serialize,Deserialize)]
-pub struct CanarySignature(String,String);
+pub struct CanarySignature(pub String,pub String);
 
 impl CanarySignature {
     /// Verify using **Base32 (Crockford)**

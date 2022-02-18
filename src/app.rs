@@ -36,6 +36,7 @@
 //! ## AmanitaNet
 
 // Serialization
+use crate::utils::hash_to_binary::hash_to_binary_representation;
 use serde::{Serialize,Deserialize};
 
 #[macro_use]
@@ -73,6 +74,10 @@ use crate::consensus::pow::{ProofOfWork64API,VerifyNonce};
 use crate::constants::CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1;
 
 use crate::crypto::CanaryGenerateSeedAPI;
+
+use crate::canary_errors::CanaryErrors;
+
+use crate::utils::hash_to_binary::*;
 //==========BASE BLOCKCHAIN==========//
 // The Base Blockchain contains the following:
 // - CanaryAccounts
@@ -94,18 +99,28 @@ pub struct CanaryAccountsBlockchain {
 }
 
 #[derive(Serialize,Deserialize,Debug,Clone)]
+/// # Transaction Pool
+/// 
+/// The Transaction Pool contains the cache of transactions that will be put into a block.
+/// 
+/// It uses **Bubble Sort** to sort by address and allows 10 to 15 transactions
 pub struct TransactionPool {
     pub transactions: Vec<CanaryAccountTransaction>,
     pub addresses: HashMap<CanaryAddress,u64>, // HashMap that contains the addresses that are in the blocks
 }
 
 impl TransactionPool {
-    pub fn sort_by_address(&mut self) {
+    pub fn sort_by_address(&mut self) -> std::result::Result<Vec<CanaryAccountTransaction>,CanaryErrors> {
         if self.transactions.len() > 10 && self.transactions.len() <= 15 {
-            let sorted_transactions = Self::bubble_sort(self.transactions);
+            let sorted_transactions = Self::bubble_sort(self.transactions.clone());
+
+            return Ok(sorted_transactions)
+        }
+        else {
+            return Err(CanaryErrors::TransactionListTooShortOrTooLong)
         }
     }
-    fn bubble_sort(transactions: Vec<CanaryAccountTransaction>) {
+    fn bubble_sort(mut transactions: Vec<CanaryAccountTransaction>) -> Vec<CanaryAccountTransaction> {
         for i in 0..transactions.len() {
             for j in 0..transactions.len() - 1 - i {
                 if transactions[j].address > transactions[j + 1].address {
@@ -113,6 +128,7 @@ impl TransactionPool {
                 }
             }
         }
+        return transactions
     }
 }
 
@@ -139,18 +155,56 @@ impl CanaryAccountsBlockchain {
         // Push First Block
         self.blocks.push(genesis_block)
     }
-    pub fn try_add_block(&mut self, block: CanaryAccountsBlock) {
+    pub fn try_add_block(&mut self, new_block: CanaryAccountsBlock) {
         // Get latest block
-        let latest_block = self.blocks.last().expect("there is at least one block");
+        let last_block = self.blocks.last().expect("there is at least one block");
         
-        if self.is_block_valid(&block, latest_block) {
-            self.blocks.push(block);
+        if self.is_block_valid(new_block.clone(), last_block.clone()) {
+            self.blocks.push(new_block);
         } else {
             error!("could not add block - invalid");
         }
     }
-    pub fn is_block_valid(&mut self, block: CanaryAccountsBlock, latest_block: CanaryAccountsBlock){
+    pub fn is_block_valid(&mut self, block: CanaryAccountsBlock, last_block: CanaryAccountsBlock) -> bool {
+        if block.previous_hash != last_block.hash {
+            return false
+        }
+        else if hash_to_binary_representation(block.hash.0.clone()).starts_with("000000") == false {
+            return false
+        }
+        else if block.block_id != last_block.block_id + 1 {
+            return false
+        }
+        else {
+            let is_valid = Self::verify_block(block.clone());
 
+            if is_valid {
+                return true
+            }
+            else {
+                return false
+            }
+        }
+    }
+    pub fn verify_block(block: CanaryAccountsBlock) -> bool {
+        let hash = CanaryAccountsBlock::calculate_hash(block.block_id, block.previous_hash, block.transaction.clone(), block.nonce);
+
+        let bh = BlockHash(hash);
+
+        if bh != block.hash {
+            return false
+        }
+
+        for i in block.transaction {
+            let is_valid = i.verify_tx();
+            
+            let hash = CanaryAccountTransaction::calculate_hash_for_signing(i.address, i.description, i.account_type, i.pow);
+
+            if hash != i.signature.1 || is_valid == false {
+                return false
+            }
+        }
+        return true
     }
 }
 
@@ -269,6 +323,11 @@ impl CanaryAccountTransaction {
 }
 
 impl CanaryAccountsBlock {
+    pub fn new(block_id: u64, previous_hash: BlockHash, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> Self {
+        loop {
+            let hash = Self::calculate_hash(block_id, previous_hash, transaction, nonce)
+        }
+    }
     pub fn calculate_hash(block_id: u64, previous_hash: BlockHash,transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> String {
         let timestamp = Utc::now().timestamp();
 
@@ -292,13 +351,15 @@ impl CanaryAccountsBlock {
         // hash_of_block
         let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This Is The Genesis Transaction"), CanaryAccountTypes::new("Default"));
 
+        let mut tx_vec = vec![];
+
         tx_vec.push(tx);
 
         let genesis_block = CanaryAccountsBlock { 
             block_id: 0u64, 
             previous_hash: BlockHash::genesis_hash(), 
             timestamp: Utc::now().timestamp(), 
-            transaction: tx, 
+            transaction: tx_vec, 
             hash: BlockHash::genesis_hash(), 
             nonce: 0u64,
         };
@@ -413,6 +474,8 @@ fn create_new_blockchain(){
 
     // Generate Transaction
     let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is a Test"), CanaryAccountTypes::new("Default"));
+
+    //blockchain.try_add_block()
 
     println!("{:?}",blockchain.blocks);
 }

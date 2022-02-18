@@ -13,6 +13,8 @@ pub mod canary_errors;
 
 pub mod crypto;
 
+pub mod difficulty;
+
 /// Utilities
 pub mod utils;
 

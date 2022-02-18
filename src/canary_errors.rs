@@ -9,4 +9,6 @@ pub enum CanaryErrors {
     FailedToValidateAddress,
 
     FailedToVerifySchnorrSignature,
+
+    TransactionListTooShortOrTooLong,
 }
