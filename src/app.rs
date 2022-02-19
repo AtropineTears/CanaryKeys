@@ -187,7 +187,7 @@ impl CanaryAccountsBlockchain {
         }
     }
     pub fn verify_block(block: CanaryAccountsBlock) -> bool {
-        let hash = CanaryAccountsBlock::calculate_hash(block.block_id, block.previous_hash, block.transaction.clone(), block.nonce);
+        let hash = CanaryAccountsBlock::calculate_hash(block.block_id, block.previous_hash, block.timestamp, block.transaction.clone(), block.nonce);
 
         let bh = BlockHash(hash);
 
@@ -323,14 +323,19 @@ impl CanaryAccountTransaction {
 }
 
 impl CanaryAccountsBlock {
-    pub fn new(block_id: u64, previous_hash: BlockHash, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> Self {
-        loop {
-            let hash = Self::calculate_hash(block_id, previous_hash, transaction, nonce)
+    pub fn new(block_id: u64, previous_hash: BlockHash, timestamp: i64, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> Self {
+        let hash = Self::calculate_hash(block_id, previous_hash.clone(), timestamp, transaction.clone(), nonce);
+
+        return Self {
+            block_id: block_id,
+            previous_hash: previous_hash,
+            timestamp: timestamp,
+            transaction: transaction,
+            nonce: nonce,
+            hash: BlockHash(hash)
         }
     }
-    pub fn calculate_hash(block_id: u64, previous_hash: BlockHash,transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> String {
-        let timestamp = Utc::now().timestamp();
-
+    pub fn calculate_hash(block_id: u64, previous_hash: BlockHash, timestamp: i64, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> String {
         let data = serde_json::json!(
             {
                 "id": block_id,
