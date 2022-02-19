@@ -11,7 +11,7 @@ impl BlockHash {
         return block_hash
     }
     pub fn decode_from_hex(&self) -> Result<Vec<u8>,CanaryErrors> {
-        let res = hex::decode(self.0);
+        let res = hex::decode(self.0.clone());
 
         match res {
             Ok(v) => return Ok(v),

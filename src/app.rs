@@ -78,6 +78,10 @@ use crate::crypto::CanaryGenerateSeedAPI;
 use crate::canary_errors::CanaryErrors;
 
 use crate::utils::hash_to_binary::*;
+
+
+pub const DIFFICULTY_PREFIX: &str = "00";
+
 //==========BASE BLOCKCHAIN==========//
 // The Base Blockchain contains the following:
 // - CanaryAccounts
@@ -165,11 +169,11 @@ impl CanaryAccountsBlockchain {
             error!("could not add block - invalid");
         }
     }
-    pub fn is_block_valid(&mut self, block: CanaryAccountsBlock, last_block: CanaryAccountsBlock) -> bool {
+    pub fn is_block_valid(&self, block: CanaryAccountsBlock, last_block: CanaryAccountsBlock) -> bool {
         if block.previous_hash != last_block.hash {
             return false
         }
-        else if hash_to_binary_representation(block.hash.0.clone()).starts_with("000000") == false {
+        else if hash_to_binary_representation(block.hash.0.clone()).starts_with(DIFFICULTY_PREFIX) == false {
             return false
         }
         else if block.block_id != last_block.block_id + 1 {
@@ -205,6 +209,28 @@ impl CanaryAccountsBlockchain {
             }
         }
         return true
+    }
+    pub fn verify_chain(&self, chain: &[CanaryAccountsBlock]) -> bool {
+        for i in 0..chain.len() {
+            if i == 0 {
+                continue;
+            }
+            let first = chain.get(i - 1).expect("has to exist");
+            let second = chain.get(i).expect("has to exist");
+            if !self.is_block_valid(second.to_owned(), first.to_owned()) {
+                return false;
+            }
+        }
+        true
+    }
+    /// Useful function that returns information for next block
+    pub fn get_info_for_next_block(&self) -> (u64,BlockHash) {
+        let last_block = self.blocks.last().expect("No last block");
+
+        let id = last_block.block_id + 1;
+        let prev_hash = last_block.previous_hash.clone();
+
+        return (id,prev_hash)
     }
 }
 
@@ -323,17 +349,37 @@ impl CanaryAccountTransaction {
 }
 
 impl CanaryAccountsBlock {
-    pub fn new(block_id: u64, previous_hash: BlockHash, timestamp: i64, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> Self {
-        let hash = Self::calculate_hash(block_id, previous_hash.clone(), timestamp, transaction.clone(), nonce);
+    pub fn new(block_id: u64, previous_hash: BlockHash, transaction: Vec<CanaryAccountTransaction>) -> Self {
+        let now = Utc::now();
+        
+        let (nonce, hash) = Self::mine_block(block_id, now.timestamp(), previous_hash.clone(), transaction.clone());
+        //let hash = Self::calculate_hash(block_id, previous_hash.clone(), timestamp, transaction.clone(), nonce);
 
         return Self {
             block_id: block_id,
             previous_hash: previous_hash,
-            timestamp: timestamp,
+            timestamp: now.timestamp(),
             transaction: transaction,
             nonce: nonce,
             hash: BlockHash(hash)
         }
+    }
+    pub fn mine_block(id: u64, timestamp: i64, previous_hash: BlockHash, transactions: Vec<CanaryAccountTransaction>) -> (u64, String) {
+        let mut nonce: u64 = 0;
+
+        loop {
+            if nonce % 100000 == 0 {
+                info!("nonce: {}", nonce);
+            }
+            let hash = Self::calculate_hash(id, previous_hash.clone(), timestamp, transactions.clone(), nonce);
+            let binary_hash = hash_to_binary_representation(hash.clone());
+            
+            if binary_hash.starts_with(DIFFICULTY_PREFIX) {
+                return (nonce, hash)
+            }
+            nonce += 1;
+        }
+
     }
     pub fn calculate_hash(block_id: u64, previous_hash: BlockHash, timestamp: i64, transaction: Vec<CanaryAccountTransaction>, nonce: u64) -> String {
         let data = serde_json::json!(
@@ -480,6 +526,11 @@ fn create_new_blockchain(){
     // Generate Transaction
     let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is a Test"), CanaryAccountTypes::new("Default"));
 
+    let (new_id, prev_hash) = blockchain.get_info_for_next_block();
+
+    let block = CanaryAccountsBlock::new(new_id, prev_hash, vec![tx]);
+
+    blockchain.try_add_block(block);
     //blockchain.try_add_block()
 
     println!("{:?}",blockchain.blocks);
