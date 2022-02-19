@@ -71,7 +71,7 @@ use crate::types::base::services::CanaryServicesType;
 // Consensus
 use crate::consensus::pow::{ProofOfWork64API,VerifyNonce};
 
-use crate::constants::CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1;
+use crate::constants::{CONSENSUS_DEFAULT_VALUE_TEN_SECONDS_1,CONSENSUS_3};
 
 use crate::crypto::CanaryGenerateSeedAPI;
 
@@ -166,6 +166,7 @@ impl CanaryAccountsBlockchain {
         if self.is_block_valid(new_block.clone(), last_block.clone()) {
             self.blocks.push(new_block);
         } else {
+            println!("Could Not Add Block");
             error!("could not add block - invalid");
         }
     }
@@ -196,10 +197,12 @@ impl CanaryAccountsBlockchain {
         let bh = BlockHash(hash);
 
         if bh != block.hash {
+            println!("Block Hash Mismatch");
             return false
         }
 
         for i in block.transaction {
+            println!("Checking Txs");
             let is_valid = i.verify_tx();
             
             let hash = CanaryAccountTransaction::calculate_hash_for_signing(i.address, i.description, i.account_type, i.pow);
@@ -318,7 +321,8 @@ impl CanaryAccountTransaction {
             let pow_difficulty = VerifyNonce::new(output_address_in_bytes, self.pow);
 
             // Checks whether PoW is less than 3
-            if pow_difficulty < 3u8 {
+            if pow_difficulty < 1u8 {
+                println!("POW DIFFICULTY CAUSING ERRORS");
                 return false
             } 
 
@@ -522,15 +526,13 @@ fn create_new_blockchain(){
 
     // Generate Keypair
     let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+    let keypair2 = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
 
     // Generate Transaction
     let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is a Test"), CanaryAccountTypes::new("Default"));
-
     let (new_id, prev_hash) = blockchain.get_info_for_next_block();
-
     let block = CanaryAccountsBlock::new(new_id, prev_hash, vec![tx]);
-
-    blockchain.try_add_block(block);
+    blockchain.try_add_block(block.clone());
     //blockchain.try_add_block()
 
     println!("{:?}",blockchain.blocks);

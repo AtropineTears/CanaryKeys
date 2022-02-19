@@ -103,7 +103,6 @@ impl ProofOfWork64API {
                 return nonce
             }
             else {
-                println!("Nonce: {}",nonce);
                 nonce += 1u64;
             }
         }
@@ -118,5 +117,4 @@ fn test_pow(){
 #[test]
 fn test_verification(){
     let x = VerifyNonce::new("Hello World!", 319625u64);
-    println!("Number: {}",x);
 }

@@ -22,7 +22,7 @@ impl CanarySignature {
         
         let pk_in_hex = hex::encode_upper(decoded_key);
         
-        let sig = SchnorrSignature::from_encoding(pk, self.0.clone(), b"CanaryKeys", self.1.as_bytes());
+        let sig = SchnorrSignature::from_encoding(pk_in_hex, self.0.clone(), b"CanaryKeys", self.1.as_bytes());
         let is_valid = sig.verify();
 
         return is_valid
