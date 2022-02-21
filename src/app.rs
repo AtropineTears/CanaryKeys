@@ -107,15 +107,25 @@ pub struct CanaryAccountsBlockchain {
 /// 
 /// The Transaction Pool contains the cache of transactions that will be put into a block.
 /// 
-/// It uses **Bubble Sort** to sort by address and allows 10 to 15 transactions
+/// It uses **Bubble Sort** to sort by address and allows 3 to 10 transactions
 pub struct TransactionPool {
     pub transactions: Vec<CanaryAccountTransaction>,
     pub addresses: HashMap<CanaryAddress,u64>, // HashMap that contains the addresses that are in the blocks
+    pub num_of_transactions: u16,
 }
 
 impl TransactionPool {
+    pub fn new(transactions: Vec<CanaryAccountTransaction>){
+
+    }
+    pub fn add_transaction(&mut self, tx: CanaryAccountTransaction) {
+        if Self::verify_transaction(tx.clone()) == true {
+            self.transactions.push(tx.clone());
+            self.num_of_transactions + 1u16;
+        } 
+    }
     pub fn sort_by_address(&mut self) -> std::result::Result<Vec<CanaryAccountTransaction>,CanaryErrors> {
-        if self.transactions.len() > 10 && self.transactions.len() <= 15 {
+        if self.transactions.len() >= 3 && self.transactions.len() <= 10 {
             let sorted_transactions = Self::bubble_sort(self.transactions.clone());
 
             return Ok(sorted_transactions)
@@ -133,6 +143,22 @@ impl TransactionPool {
             }
         }
         return transactions
+    }
+    fn get_address(tx: CanaryAccountTransaction) -> CanaryAddress {
+        return tx.address
+    }
+    pub fn verify_transaction(tx: CanaryAccountTransaction) -> bool {
+        return tx.verify_tx()
+    }
+    pub fn verify_num_of_transactions(&self) -> bool {
+        let num_of_tx = self.transactions.len();
+
+        if num_of_tx >= 3 && num_of_tx <= 10 {
+            return true
+        }
+        else {
+            return false
+        }
     }
 }
 
@@ -197,12 +223,10 @@ impl CanaryAccountsBlockchain {
         let bh = BlockHash(hash);
 
         if bh != block.hash {
-            println!("Block Hash Mismatch");
             return false
         }
 
         for i in block.transaction {
-            println!("Checking Txs");
             let is_valid = i.verify_tx();
             
             let hash = CanaryAccountTransaction::calculate_hash_for_signing(i.address, i.description, i.account_type, i.pow);
