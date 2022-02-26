@@ -25,11 +25,6 @@ CanaryValidationLib = "0.1.1"
 serde = { version = "1.0.133", features=["derive"]}
 serde_json = "1.0.79"
 
-# Networking
-libp2p = { version = "0.39", features = ["tcp-tokio", "mdns"] }
-
-tokio = { version = "1.0", features = ["io-util", "io-std", "macros", "rt", "rt-multi-thread", "sync", "time"] }
-
 # Encoding
 hex = "0.4.3"
 base32 = "0.4.0"
