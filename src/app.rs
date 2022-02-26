@@ -124,15 +124,11 @@ impl TransactionPool {
             self.num_of_transactions + 1u16;
         } 
     }
-    pub fn sort_by_address(&mut self) -> std::result::Result<Vec<CanaryAccountTransaction>,CanaryErrors> {
-        if self.transactions.len() >= 3 && self.transactions.len() <= 10 {
-            let sorted_transactions = Self::bubble_sort(self.transactions.clone());
+    /// Sorts the transactions by their address
+    pub fn sort_by_address(&mut self) -> Vec<CanaryAccountTransaction> {
+        let sorted_transactions = Self::bubble_sort(self.transactions.clone());
 
-            return Ok(sorted_transactions)
-        }
-        else {
-            return Err(CanaryErrors::TransactionListTooShortOrTooLong)
-        }
+        return sorted_transactions
     }
     fn bubble_sort(mut transactions: Vec<CanaryAccountTransaction>) -> Vec<CanaryAccountTransaction> {
         for i in 0..transactions.len() {
@@ -175,6 +171,7 @@ impl CanaryAccountsBlockchain {
             delegates: HashMap::new(),
         }
     }
+    /// Creates genesis block
     pub fn genesis(&mut self){
         // Generate Keypair For Testing
         let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
@@ -185,6 +182,7 @@ impl CanaryAccountsBlockchain {
         // Push First Block
         self.blocks.push(genesis_block)
     }
+    /// Attempts to add a block
     pub fn try_add_block(&mut self, new_block: CanaryAccountsBlock) {
         // Get latest block
         let last_block = self.blocks.last().expect("there is at least one block");
@@ -196,6 +194,7 @@ impl CanaryAccountsBlockchain {
             error!("could not add block - invalid");
         }
     }
+    /// Checks if block is valid
     pub fn is_block_valid(&self, block: CanaryAccountsBlock, last_block: CanaryAccountsBlock) -> bool {
         if block.previous_hash != last_block.hash {
             return false
@@ -217,6 +216,7 @@ impl CanaryAccountsBlockchain {
             }
         }
     }
+    /// Verifies single block
     pub fn verify_block(block: CanaryAccountsBlock) -> bool {
         let hash = CanaryAccountsBlock::calculate_hash(block.block_id, block.previous_hash, block.timestamp, block.transaction.clone(), block.nonce);
 
@@ -237,6 +237,7 @@ impl CanaryAccountsBlockchain {
         }
         return true
     }
+    /// Verifies full chain
     pub fn verify_chain(&self, chain: &[CanaryAccountsBlock]) -> bool {
         for i in 0..chain.len() {
             if i == 0 {
@@ -258,6 +259,25 @@ impl CanaryAccountsBlockchain {
         let prev_hash = last_block.previous_hash.clone();
 
         return (id,prev_hash)
+    }
+    /// Chooses the longest chain. Checks remote chain against local chain and if remote is longer, chooses remote
+    pub fn choose_chain(&mut self, local: Vec<CanaryAccountsBlock>, remote: Vec<CanaryAccountsBlock>) -> Vec<CanaryAccountsBlock> {
+        let is_local_valid = self.verify_chain(&local);
+        let is_remote_valid = self.verify_chain(&remote);
+
+        if is_local_valid && is_remote_valid {
+            if local.len() >= remote.len() {
+                local
+            } else {
+                remote
+            }
+        } else if is_remote_valid && !is_local_valid {
+            remote
+        } else if !is_remote_valid && is_local_valid {
+            local
+        } else {
+            panic!("local and remote chains are both invalid");
+        }
     }
 }
 
