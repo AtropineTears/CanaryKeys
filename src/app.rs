@@ -50,6 +50,8 @@ use std::collections::HashMap;
 
 use log::*;
 
+use std::fmt;
+
 
 // Crypto
 use blake2_rfc::blake2b::*;
@@ -110,25 +112,33 @@ pub struct CanaryAccountsBlockchain {
 /// It uses **Bubble Sort** to sort by address and allows 3 to 10 transactions
 pub struct TransactionPool {
     pub transactions: Vec<CanaryAccountTransaction>,
-    pub addresses: HashMap<CanaryAddress,u64>, // HashMap that contains the addresses that are in the blocks
+    pub addresses: HashMap<CanaryAddress,bool>, // HashMap that contains the addresses that are in the blocks
     pub num_of_transactions: u16,
 }
 
 impl TransactionPool {
-    pub fn new(transactions: Vec<CanaryAccountTransaction>){
-
+    pub fn new() -> Self {        
+        return Self {
+            transactions: vec![],
+            addresses: HashMap::new(),
+            num_of_transactions: 0u16,
+        }
     }
-    pub fn add_transaction(&mut self, tx: CanaryAccountTransaction) {
+    pub fn try_add_transaction(&mut self, tx: CanaryAccountTransaction) -> bool {
         if Self::verify_transaction(tx.clone()) == true {
             self.transactions.push(tx.clone());
             self.num_of_transactions + 1u16;
-        } 
+            return true
+        }
+        else {
+            return false
+        }
     }
     /// Sorts the transactions by their address
-    pub fn sort_by_address(&mut self) -> Vec<CanaryAccountTransaction> {
+    pub fn sort_by_address(&mut self) {
         let sorted_transactions = Self::bubble_sort(self.transactions.clone());
 
-        return sorted_transactions
+        self.transactions = sorted_transactions;
     }
     fn bubble_sort(mut transactions: Vec<CanaryAccountTransaction>) -> Vec<CanaryAccountTransaction> {
         for i in 0..transactions.len() {
@@ -571,13 +581,42 @@ fn create_new_blockchain(){
     // Generate Keypair
     let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
     let keypair2 = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+    let keypair3 = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+
 
     // Generate Transaction
     let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is a Test"), CanaryAccountTypes::new("Default"));
+    let tx2 = CanaryAccountTransaction::create_transaction(keypair2, CanaryDescription::new("Second Keypair"), CanaryAccountTypes::new("Default"));
+
+    
     let (new_id, prev_hash) = blockchain.get_info_for_next_block();
     let block = CanaryAccountsBlock::new(new_id, prev_hash, vec![tx]);
     blockchain.try_add_block(block.clone());
     //blockchain.try_add_block()
 
     println!("{:?}",blockchain.blocks);
+}
+
+#[test]
+fn transaction_pool_tests() {
+    let keypair = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+    let keypair2 = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+    let keypair3 = CanaryGenerateSeedAPI::generate_test_schnorr_keypair();
+
+    let tx = CanaryAccountTransaction::create_transaction(keypair, CanaryDescription::new("This is the first transaction"), CanaryAccountTypes::new("Default"));
+    let tx2 = CanaryAccountTransaction::create_transaction(keypair2, CanaryDescription::new("This is the second transaction"), CanaryAccountTypes::new("Default"));
+    let tx3 = CanaryAccountTransaction::create_transaction(keypair3, CanaryDescription::new("This is the third transaction"), CanaryAccountTypes::new("Default"));
+
+
+
+    let mut transaction_pool = TransactionPool::new();
+
+    transaction_pool.try_add_transaction(tx);
+    transaction_pool.try_add_transaction(tx2);
+    transaction_pool.try_add_transaction(tx3);
+
+    let sorted_transactions = transaction_pool.sort_by_address();
+
+    println!("{:?}",sorted_transactions)
+
 }
