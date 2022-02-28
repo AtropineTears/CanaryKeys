@@ -5,9 +5,6 @@ pub struct CanaryKeysApp {
     pub layer: CanaryLayerType,
     
     pub accounts: HashMap<CanaryAddress,AccountChainPrimary>,
-    //pub delegates: HashMap<CanaryAddress,AccountChainPrimary>,
-    
-    //pub accounts_other: Option<HashMap<CanaryAddress,AccountChain>>,
 }
 
 pub struct RootAccount {

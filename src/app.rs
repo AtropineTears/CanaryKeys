@@ -127,7 +127,7 @@ impl TransactionPool {
     pub fn try_add_transaction(&mut self, tx: CanaryAccountTransaction) -> bool {
         if Self::verify_transaction(tx.clone()) == true {
             self.transactions.push(tx.clone());
-            self.num_of_transactions + 1u16;
+            self.num_of_transactions = self.num_of_transactions + 1u16;
             return true
         }
         else {
@@ -332,9 +332,6 @@ impl CanaryAccountTransaction {
         if final_address.validate() == false {
             panic!("Could Not Validate Address")
         }
-
-        // TODO: Sign Address, Description, Account Type, and PoW
-        // TODO: Change Account Type to Account Implementation Using a 16 byte string!!!!!!!!
 
         let hash = Self::calculate_hash_for_signing(final_address.clone(), description.clone(), account_type.clone(), nonce);
 
@@ -615,8 +612,8 @@ fn transaction_pool_tests() {
     transaction_pool.try_add_transaction(tx2);
     transaction_pool.try_add_transaction(tx3);
 
-    let sorted_transactions = transaction_pool.sort_by_address();
+    transaction_pool.sort_by_address();
 
-    println!("{:?}",sorted_transactions)
+    println!("{:?}",transaction_pool)
 
 }
