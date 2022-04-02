@@ -3,7 +3,6 @@ use crate::types::base::block_hash::BlockHash;
 
 pub struct CanaryKeysApp {
     pub layer: CanaryLayerType,
-    
     pub accounts: HashMap<CanaryAddress,AccountChainPrimary>,
 }
 
@@ -17,7 +16,14 @@ pub struct AccountChainPrimary {
 }
 
 pub struct TransactionBlock {
-    block_attributes: BlockLayout,
+    id: u64,
+    hash: BlockHash,
+    previous_hash: BlockHash,
+    timestamp: i64,
+    nonce: u64,
+        
+    amount: u128,
+    balance: u128,
 }
 
 
