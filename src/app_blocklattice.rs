@@ -1,18 +1,34 @@
+//! # CanaryKeys
+//! 
+//! ## 
+
 use crate::types::address::CanaryAddress;
 use crate::types::base::block_hash::BlockHash;
 
+
+//=====APP=====//
 pub struct CanaryKeysApp {
     pub layer: CanaryLayerType,
+    
     pub accounts: HashMap<CanaryAddress,AccountChainPrimary>,
+    pub validators: HashMap<CanaryAddress,,
 }
 
-pub struct RootAccount {
-
+//=====ROOT INDEX====//
+pub struct CanaryAccountIndex {
+    pub chains: Vec<u16>,
 }
 
+
+//=====Account Chain (Transactions)=====//
 pub struct AccountChainPrimary {
     pub address: CanaryAddress,
+    
+    // Transaction Blocks
     pub tx_blocks: Vec<TransactionBlock>,
+
+    // Representative
+    pub 
 }
 
 pub struct TransactionBlock {

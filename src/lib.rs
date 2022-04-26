@@ -26,6 +26,8 @@ pub mod blocklattice;
 
 pub mod app;
 
+pub mod app_blockchain;
+
 pub mod types;
 pub mod pivotpoint;
 pub mod hash_links;
